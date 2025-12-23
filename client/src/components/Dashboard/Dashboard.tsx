@@ -4,118 +4,182 @@ import { useDispatch, useSelector } from 'react-redux';
 import LayoutPreset, { LayoutPresetType } from '@/enums/LayoutPreset';
 import { saveLayoutPreset, getLayoutPreset } from '@/store/actions/settings';
 import { RootState } from '@/store/reducers';
-
-import { BaseViewIconButton } from '@/components/views/BaseView';
-import { ReactComponent as ConnectedIcon } from '@/assets/icons/connected.svg';
-import { ReactComponent as DisconnectedIcon } from '@/assets/icons/disconnected.svg';
-import { ReactComponent as SettingsIcon } from '@/assets/icons/settings.svg';
-import SettingsModal from './SettingsModal';
 import { startSocketWatcher } from '@/store/middleware/socketMiddleware';
+
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Settings,
+  Activity,
+  Battery,
+  Wifi,
+  WifiOff,
+  Menu,
+  Zap
+} from "lucide-react";
+import SettingsModal from './SettingsModal';
+
+// Import view components
+import DrivetrainView from './views/DrivetrainView';
+import IntakeView from './views/IntakeView';
+import CameraView from './views/CameraView';
+import DepositView from './views/DepositView';
+import TelemetryView from './views/TelemetryView';
 
 export default function Dashboard() {
   const socket = useSelector((state: RootState) => state.socket);
-  const layoutPreset = useSelector(
-    (state: RootState) => state.settings.layoutPreset,
-  );
+  const layoutPreset = useSelector((state: RootState) => state.settings.layoutPreset);
   const enabled = useSelector((state: RootState) => state.status.enabled);
-  const batteryVoltage = useSelector(
-    (state: RootState) => state.status.batteryVoltage,
-  );
+  const batteryVoltage = useSelector((state: RootState) => state.status.batteryVoltage);
   const dispatch = useDispatch();
 
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     dispatch(getLayoutPreset());
-
     startSocketWatcher(dispatch);
   }, [dispatch]);
 
+  // Get all available layout presets
+  const layoutPresets = [
+    { id: 'DRIVETRAIN' as LayoutPresetType, name: 'Drivetrain' },
+    { id: 'INTAKE' as LayoutPresetType, name: 'Intake' },
+    { id: 'CAMERA' as LayoutPresetType, name: 'Camera' },
+    { id: 'DEPOSIT' as LayoutPresetType, name: 'Deposit' },
+    { id: 'TELEMETRY' as LayoutPresetType, name: 'Telemetry' },
+  ];
+
   return (
-    <div
-      className="flex flex-col text-black dark:text-white"
-      style={{ width: '100vw', height: '100vh' }}
-    >
-      <header className="flex items-center justify-between bg-primary-600 px-3 py-1 text-white">
-        <h1 className="text-2xl font-medium">FTC Dashboard</h1>
-        <div className="flex-center">
-          <select
-            className="mx-2 rounded border-primary-300 bg-primary-100 py-1 text-sm text-black focus:border-primary-100 focus:ring-2 focus:ring-white focus:ring-opacity-40"
-            value={layoutPreset as LayoutPresetType}
-            onChange={(evt) =>
-              dispatch(saveLayoutPreset(evt.target.value as LayoutPresetType))
-            }
-          >
-            {Object.keys(LayoutPreset)
-              .filter(
-                (key) =>
-                  typeof LayoutPreset[key as LayoutPresetType] === 'string',
-              )
-              .map((key) => (
-                <option key={key} value={key}>
-                  {LayoutPreset.getName(key as LayoutPresetType)}
-                </option>
-              ))}
-          </select>
-          {socket.isConnected && (
-            <p
-              className="mx-2"
-              style={{
-                width: batteryVoltage > 0 ? '120px' : '60px',
-                textAlign: 'right',
-              }}
-            >
-              {socket.pingTime}ms
-              {batteryVoltage > 0 ? ` / ${batteryVoltage.toFixed(2)}V` : ''}
-            </p>
-          )}
-          {socket.isConnected ? (
-            <ConnectedIcon className="ml-4 h-10 w-10 py-1" />
-          ) : (
-            <DisconnectedIcon className="ml-4 h-10 w-10 py-1" />
-          )}
-          <BaseViewIconButton
-            title="Settings"
-            className="icon-btn group ml-3 h-8 w-8 hover:border-white/50"
-            onClick={() => setIsSettingsModalOpen(true)}
-          >
-            <SettingsIcon className="h-7 w-7 transition group-hover:rotate-[15deg] group-focus:rotate-[15deg]" />
-          </BaseViewIconButton>
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full bg-background">
+      {/* Sidebar */}
+      <Sidebar collapsible="none" className={sidebarOpen ? '' : 'hidden'}>
+        <SidebarContent>
+            {/* FTC Dashboard Header */}
+            <div className="flex items-center gap-2 px-4 py-4 border-b">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-black text-primary-foreground">
+                <Zap className="h-4 w-4 text-yellow-500" />
+              </div>
+              <span className="font-semibold group-data-[collapsible=icon]:hidden">Voltage Vanguard</span>
+            </div>
+
+            {/* Layout Presets */}
+            <SidebarGroup>
+              <SidebarGroupLabel>Layout Presets</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {layoutPresets.map((preset) => (
+                    <SidebarMenuItem key={preset.id}>
+                      <SidebarMenuButton
+                        onClick={() => dispatch(saveLayoutPreset(preset.id))}
+                        isActive={layoutPreset === preset.id}
+                        tooltip={preset.name}
+                      >
+                        <div className="flex h-4 w-4 items-center justify-center rounded bg-primary/10 text-primary text-xs font-bold">
+                          {preset.name.charAt(0)}
+                        </div>
+                        <span>{preset.name}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+        </Sidebar>
+
+
+      {/* Main Content */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Header */}
+          <header className="border-b bg-card px-6 py-3 flex items-center justify-between flex-shrink-0">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
+                <Menu className="h-5 w-5" />
+              </Button>
+              <h1 className="text-xl font-bold tracking-tight text-foreground">FTC Dashboard</h1>
+              <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${socket.isConnected ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                {socket.isConnected ? "Connected" : "Disconnected"}
+              </span>
+            </div>
+
+            <Button variant="ghost" size="icon" onClick={() => setIsSettingsModalOpen(true)}>
+              <Settings className="h-5 w-5" />
+            </Button>
+          </header>
+
+          {/* Main Content Area */}
+          <main className="flex-1 p-6 space-y-6 overflow-auto min-h-0">
+            {/* Quick Stats Grid */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Card className="shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <CardTitle className="text-sm font-medium">Battery Voltage</CardTitle>
+                  <Battery className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {batteryVoltage > 0 ? `${batteryVoltage.toFixed(2)}V` : "---"}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <CardTitle className="text-sm font-medium">Latency (Ping)</CardTitle>
+                  <Activity className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{socket.isConnected ? `${socket.pingTime}ms` : "N/A"}</div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                  <CardTitle className="text-sm font-medium">Connection</CardTitle>
+                  {socket.isConnected ? <Wifi className="h-4 w-4 text-green-500" /> : <WifiOff className="h-4 w-4 text-red-500" />}
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{socket.isConnected ? "Active" : "Offline"}</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Your Custom Content Area */}
+            <div className="w-full flex-1 min-h-0">
+              {socket.isConnected && !enabled ? (
+                <Card className="flex flex-col items-center justify-center h-64 p-10">
+                  <h2 className="text-xl font-semibold text-foreground">Dashboard is Disabled</h2>
+                  <p className="text-sm text-muted-foreground">Enable via the RC menu or an Op Mode.</p>
+                </Card>
+              ) : (
+                <div className="h-full">
+                  {layoutPreset === 'DRIVETRAIN' && <DrivetrainView />}
+                  {layoutPreset === 'INTAKE' && <IntakeView />}
+                  {layoutPreset === 'CAMERA' && <CameraView />}
+                  {layoutPreset === 'DEPOSIT' && <DepositView />}
+                  {layoutPreset === 'TELEMETRY' && <TelemetryView />}
+                </div>
+              )}
+            </div>
+          </main>
         </div>
-      </header>
-      {socket.isConnected && !enabled ? (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '100%',
-          }}
-        >
-          <div
-            className="justify-self-center text-center"
-            style={{ maxWidth: '600px' }}
-          >
-            <h1 className="text-xl font-medium">FTC Dashboard is Disabled</h1>
-            <p>
-              To re-enable, run the &quot;Enable/Disable Dashboard&quot; op mode
-              or select &quot;Enable Dashboard&quot; from the RC menu
-            </p>
-          </div>
-        </div>
-      ) : (
-        LayoutPreset.getContent(layoutPreset as LayoutPresetType)
-      )}
-      <SettingsModal
-        isOpen={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
-      />
-      {/* Insert a headless-ui portal so the .set-theme-x styles apply to the headless ui dialogs. */}
-      {/* They are rendered as siblings to the root by default, outside of our scope */}
-      <div id="headlessui-portal-root">
-        {/* Leave an empty div here. Otherwise, headless-ui will remove this container on dialog close */}
-        <div />
       </div>
-    </div>
+
+      <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} />
+    </SidebarProvider>
   );
 }

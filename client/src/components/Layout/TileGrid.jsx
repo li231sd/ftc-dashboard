@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 
 const TileGrid = ({ gridTemplate, children }) => (
-  <div className="grid flex-1 overflow-auto" style={{ gridTemplate }}>
+  <div className="grid gap-1 flex-1 overflow-auto" style={{ gridTemplate }}>
     {children}
   </div>
 );

@@ -6,6 +6,10 @@ type BaseViewProps = PropsWithChildren<{
   isUnlocked?: boolean;
 }>;
 
+/**
+ * BaseView: The main container for individual dashboard modules.
+ * Refined to match shadcn/ui Card component styling.
+ */
 const BaseView = forwardRef<
   HTMLDivElement,
   BaseViewProps & JSX.IntrinsicElements['div']
@@ -13,9 +17,10 @@ const BaseView = forwardRef<
   <div
     ref={ref}
     className={clsx(
-      'flex h-full flex-col overflow-hidden bg-white transition-shadow',
-      isUnlocked ? 'select-none rounded-md shadow-md' : '',
-      'dark:bg-slate-900',
+      // Standard shadcn Card styling: background, border, and subtle shadow
+      'flex h-full flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm transition-all',
+      // If unlocked (editing layout), show a primary colored ring to indicate active state
+      isUnlocked ? 'ring-2 ring-primary/50 border-primary/20 shadow-lg' : 'border-border',
       className,
     )}
     {...props}
@@ -29,6 +34,10 @@ type BaseViewHeadingProps = {
   isDraggable?: boolean;
 };
 
+/**
+ * BaseViewHeading: Replaces the old large header with a muted, uppercase title
+ * consistent with modern dashboard Card headers.
+ */
 const BaseViewHeading = ({
   className,
   children,
@@ -37,8 +46,8 @@ const BaseViewHeading = ({
 }: BaseViewHeadingProps & JSX.IntrinsicElements['h2']) => (
   <h2
     className={clsx(
-      'w-full px-4 py-2 text-xl font-medium',
-      isDraggable && 'grab-handle',
+      'w-full px-4 py-3 text-xs font-bold tracking-widest text-muted-foreground uppercase bg-muted/30 border-b',
+      isDraggable && 'grab-handle cursor-grab active:cursor-grabbing',
       className,
     )}
     {...props}
@@ -52,7 +61,7 @@ const BaseViewBody = ({
   className,
   ...props
 }: JSX.IntrinsicElements['div']) => (
-  <div className={`flex-1 overflow-auto px-4 ${className}`} {...props}>
+  <div className={clsx('flex-1 overflow-auto p-4 text-foreground', className)} {...props}>
     {children}
   </div>
 );
@@ -62,7 +71,7 @@ const BaseViewIcons = ({
   children,
   ...props
 }: JSX.IntrinsicElements['div']) => (
-  <div className={`mr-3 flex items-center space-x-1 ${className}`} {...props}>
+  <div className={clsx('mr-3 flex items-center space-x-1 text-muted-foreground', className)} {...props}>
     {children}
   </div>
 );
@@ -72,18 +81,28 @@ const BaseViewIcon = ({
   children,
   ...props
 }: JSX.IntrinsicElements['div']) => (
-  <div className={`flex-center h-8 w-8 ${className}`} {...props}>
+  <div className={clsx('flex items-center justify-center h-8 w-8', className)} {...props}>
     {children}
   </div>
 );
 
+/**
+ * BaseViewIconButton: Styled to match shadcn/ui Ghost Button variants.
+ */
 const BaseViewIconButton = ({
   className,
   children,
   size = 8,
   ...props
 }: JSX.IntrinsicElements['button'] & { size?: number }) => (
-  <button className={`icon-btn h-${size} w-${size} ${className}`} {...props}>
+  <button
+    className={clsx(
+      'flex items-center justify-center rounded-md transition-colors hover:bg-accent hover:text-accent-foreground',
+      `h-${size} w-${size}`,
+      className
+    )}
+    {...props}
+  >
     {children}
   </button>
 );

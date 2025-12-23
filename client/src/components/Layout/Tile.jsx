@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 
 const Tile = ({ children, row, col }) => (
   <div
-    className="border border-gray-100 transition-colors dark:border-slate-800"
+    className="transition-colors dark:border-slate-800"
     style={{
       gridRow: row,
       gridColumn: col,

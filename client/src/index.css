@@ -2,86 +2,129 @@
 @tailwind components;
 @tailwind utilities;
 
-/* roboto-300 - latin */
-@font-face {
-  font-family: 'Roboto';
-  font-style: normal;
-  font-weight: 300;
-  src: local(''),
-    url('assets/fonts/roboto-v20-latin-300.woff2') format('woff2'),
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark, :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+  .dark {
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
 }
 
-/* roboto-regular - latin */
+@layer base {
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground font-sans antialiased; margin: 0; }
+}
+
+/* --- ROBOT VIEWPORT GRID FIX --- */
+
+.react-grid-layout {
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* Also ensure the parent container has no border */
+.react-grid-layout > * {
+  border: none;
+}
+
+/* The box that shows where a card will land when dragging */
+.react-grid-placeholder {
+  @apply rounded-xl bg-primary/10 border-dashed border-2 border-primary/20 opacity-30 !important;
+  transition: none !important;
+}
+
+/* Ensure individual grid items don't have unwanted borders */
+.react-grid-item {
+  @apply transition-all duration-300;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { @apply bg-transparent; }
+::-webkit-scrollbar-thumb { @apply bg-muted rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground/30; }
+
+/* Original FTC Table Support */
+table { @apply w-full border-collapse text-left text-sm; }
+td { @apply p-2 align-top; }
+
+.error { @apply font-bold text-destructive; }
+.warning { @apply font-bold text-yellow-500; }
+
 @font-face {
   font-family: 'Roboto';
   font-style: normal;
   font-weight: 400;
-  src: local(''),
-    url('assets/fonts/roboto-v20-latin-regular.woff2') format('woff2'),
+  src: local('Roboto'), url('assets/fonts/roboto-v20-latin-regular.woff2') format('woff2');
 }
 
-/* roboto-500 - latin */
-@font-face {
-  font-family: 'Roboto';
-  font-style: normal;
-  font-weight: 500;
-  src: local(''),
-    url('assets/fonts/roboto-v20-latin-500.woff2') format('woff2'),
-}
+/* Dark mode canvas brightness adjustment */
+.dark canvas { filter: brightness(0.9) contrast(1.1); }
 
-/* roboto-700 - latin */
-@font-face {
-  font-family: 'Roboto';
-  font-style: normal;
-  font-weight: 700;
-  src: local(''),
-    url('assets/fonts/roboto-v20-latin-700.woff2') format('woff2'),
-}
-
-table {
-  margin: 0;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-table table {
-  margin-left: 24px;
-}
-
-td {
-  padding: 4px;
-}
-
-input {
-  font-size: inherit;
-}
-
-.option-header {
-  display: flex;
-}
-
-.icon-btn {
-  @apply flex items-center justify-center rounded-md;
-  @apply border border-transparent transition-colors hover:border-gray-400 focus:border-primary-500;
-  @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-opacity-30;
-}
-
-.error {
-  @apply font-bold text-red-500;
-}
-
-.warning {
-  @apply font-bold text-yellow-500;
-}
-
-.grab-handle {
-  cursor: grab;
-}
-
-.flex-center {
-  @apply flex items-center justify-center;
-}
-
-select {
-  background-position: right 0.15rem center;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
