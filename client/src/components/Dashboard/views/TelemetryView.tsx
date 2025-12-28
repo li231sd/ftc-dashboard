@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '@/store/reducers';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,41 +15,108 @@ import {
 } from "lucide-react";
 
 export default function TelemetryView() {
-  // Intake Motor State
-  const [intakeMotorRpm, setIntakeMotorRpm] = useState(0);
-
-  // Flick Servo States
-  const [flickServo1, setFlickServo1] = useState<'up' | 'down'>('down');
-  const [flickServo2, setFlickServo2] = useState<'up' | 'down'>('down');
-  const [flickServo3, setFlickServo3] = useState<'up' | 'down'>('down');
-
-  // Deposit Motor RPM
-  const [depositRpm, setDepositRpm] = useState(0);
-
-  // PID Values for Deposit
-  const [pidP, setPidP] = useState(0.05);
-  const [pidI, setPidI] = useState(0.001);
-  const [pidD, setPidD] = useState(0.002);
-  const [pidF, setPidF] = useState(0.1);
+  const dispatch = useDispatch();
+  const socket = useSelector((state: RootState) => state.socket);
+  const telemetry = useSelector((state: RootState) => state.telemetry);
 
   const handleSendIntakeRpm = () => {
-    // TODO: Send to robot via WebSocket/Redux
-    console.log('Sending Intake RPM:', intakeMotorRpm);
+    // Dispatch to Redux
+    dispatch({
+      type: 'SET_INTAKE_MOTOR_RPM',
+      rpm: telemetry.intakeMotorRpm
+    });
+
+    // Send to robot via WebSocket
+    if (socket.connection) {
+      socket.connection.send(JSON.stringify({
+        type: 'command',
+        subsystem: 'intake',
+        command: 'setRpm',
+        value: telemetry.intakeMotorRpm
+      }));
+    }
   };
 
   const handleSendFlickServo = (servo: 1 | 2 | 3, position: 'up' | 'down') => {
-    // TODO: Send to robot via WebSocket/Redux
-    console.log(`Sending Flick Servo ${servo}:`, position);
+    const servoKey = `servo${servo}` as 'servo1' | 'servo2' | 'servo3';
+
+    // Dispatch to Redux
+    dispatch({
+      type: 'SET_FLICK_SERVO_POSITION',
+      servo: servoKey,
+      position: position
+    });
+
+    // Send to robot via WebSocket
+    if (socket.connection) {
+      socket.connection.send(JSON.stringify({
+        type: 'command',
+        subsystem: 'intake',
+        command: 'setFlickServo',
+        servo: servo,
+        position: position
+      }));
+    }
   };
 
   const handleSendDepositRpm = () => {
-    // TODO: Send to robot via WebSocket/Redux
-    console.log('Sending Deposit RPM:', depositRpm);
+    // Dispatch to Redux
+    dispatch({
+      type: 'SET_DEPOSIT_RPM',
+      rpm: telemetry.depositRpm
+    });
+
+    // Send to robot via WebSocket
+    if (socket.connection) {
+      socket.connection.send(JSON.stringify({
+        type: 'command',
+        subsystem: 'deposit',
+        command: 'setRpm',
+        value: telemetry.depositRpm
+      }));
+    }
   };
 
   const handleSendPID = () => {
-    // TODO: Send to robot via WebSocket/Redux
-    console.log('Sending PID Values:', { p: pidP, i: pidI, d: pidD, f: pidF });
+    // Dispatch to Redux
+    dispatch({
+      type: 'SET_DEPOSIT_PIDF',
+      pidf: telemetry.depositPidf
+    });
+
+    // Send to robot via WebSocket
+    if (socket.connection) {
+      socket.connection.send(JSON.stringify({
+        type: 'command',
+        subsystem: 'deposit',
+        command: 'setPidf',
+        values: telemetry.depositPidf
+      }));
+    }
+  };
+
+  const updateIntakeRpm = (rpm: number) => {
+    dispatch({
+      type: 'SET_INTAKE_MOTOR_RPM',
+      rpm: rpm
+    });
+  };
+
+  const updateDepositRpm = (rpm: number) => {
+    dispatch({
+      type: 'SET_DEPOSIT_RPM',
+      rpm: rpm
+    });
+  };
+
+  const updatePidf = (key: 'p' | 'i' | 'd' | 'f', value: number) => {
+    dispatch({
+      type: 'SET_DEPOSIT_PIDF',
+      pidf: {
+        ...telemetry.depositPidf,
+        [key]: value
+      }
+    });
   };
 
   return (
@@ -72,8 +140,8 @@ export default function TelemetryView() {
                   type="number"
                   min="0"
                   max="500"
-                  value={intakeMotorRpm}
-                  onChange={(e) => setIntakeMotorRpm(Number(e.target.value))}
+                  value={telemetry.intakeMotorRpm}
+                  onChange={(e) => updateIntakeRpm(Number(e.target.value))}
                   className="text-lg font-bold"
                 />
                 <Button onClick={handleSendIntakeRpm} size="icon">
@@ -84,8 +152,8 @@ export default function TelemetryView() {
 
             <div className="space-y-2">
               <Slider
-                value={[intakeMotorRpm]}
-                onValueChange={(value) => setIntakeMotorRpm(value[0])}
+                value={[telemetry.intakeMotorRpm]}
+                onValueChange={(value) => updateIntakeRpm(value[0])}
                 max={500}
                 step={10}
                 className="w-full"
@@ -100,9 +168,9 @@ export default function TelemetryView() {
             <div className="flex items-center justify-center gap-2 p-4 bg-muted/30 rounded-lg">
               <RotateCw
                 className="h-8 w-8 text-primary animate-spin"
-                style={{ animationDuration: intakeMotorRpm > 0 ? `${1000 / (intakeMotorRpm / 60)}ms` : '0s' }}
+                style={{ animationDuration: telemetry.intakeMotorRpm > 0 ? `${1000 / (telemetry.intakeMotorRpm / 60)}ms` : '0s' }}
               />
-              <span className="text-3xl font-bold tabular-nums">{intakeMotorRpm}</span>
+              <span className="text-3xl font-bold tabular-nums">{telemetry.intakeMotorRpm}</span>
               <span className="text-muted-foreground">RPM</span>
             </div>
           </CardContent>
@@ -122,14 +190,14 @@ export default function TelemetryView() {
               <div className="flex flex-col items-center gap-3">
                 <Label className="text-sm font-medium text-muted-foreground">Servo 1</Label>
                 <div className={`relative w-20 h-32 rounded-lg border-2 transition-all ${
-                  flickServo1 === 'up'
+                  telemetry.flickServos.servo1 === 'up'
                     ? 'border-green-500 bg-green-500/10'
                     : 'border-red-500 bg-red-500/10'
                 }`}>
                   <div className={`absolute left-1/2 -translate-x-1/2 transition-all duration-300 ${
-                    flickServo1 === 'up' ? 'top-2' : 'bottom-2'
+                    telemetry.flickServos.servo1 === 'up' ? 'top-2' : 'bottom-2'
                   }`}>
-                    {flickServo1 === 'up' ? (
+                    {telemetry.flickServos.servo1 === 'up' ? (
                       <ChevronUp className="h-6 w-6 text-green-500" />
                     ) : (
                       <ChevronDown className="h-6 w-6 text-red-500" />
@@ -139,21 +207,15 @@ export default function TelemetryView() {
                 <div className="flex gap-1">
                   <Button
                     size="sm"
-                    variant={flickServo1 === 'up' ? 'default' : 'outline'}
-                    onClick={() => {
-                      setFlickServo1('up');
-                      handleSendFlickServo(1, 'up');
-                    }}
+                    variant={telemetry.flickServos.servo1 === 'up' ? 'default' : 'outline'}
+                    onClick={() => handleSendFlickServo(1, 'up')}
                   >
                     Up
                   </Button>
                   <Button
                     size="sm"
-                    variant={flickServo1 === 'down' ? 'default' : 'outline'}
-                    onClick={() => {
-                      setFlickServo1('down');
-                      handleSendFlickServo(1, 'down');
-                    }}
+                    variant={telemetry.flickServos.servo1 === 'down' ? 'default' : 'outline'}
+                    onClick={() => handleSendFlickServo(1, 'down')}
                   >
                     Down
                   </Button>
@@ -164,14 +226,14 @@ export default function TelemetryView() {
               <div className="flex flex-col items-center gap-3">
                 <Label className="text-sm font-medium text-muted-foreground">Servo 2</Label>
                 <div className={`relative w-20 h-32 rounded-lg border-2 transition-all ${
-                  flickServo2 === 'up'
+                  telemetry.flickServos.servo2 === 'up'
                     ? 'border-green-500 bg-green-500/10'
                     : 'border-red-500 bg-red-500/10'
                 }`}>
                   <div className={`absolute left-1/2 -translate-x-1/2 transition-all duration-300 ${
-                    flickServo2 === 'up' ? 'top-2' : 'bottom-2'
+                    telemetry.flickServos.servo2 === 'up' ? 'top-2' : 'bottom-2'
                   }`}>
-                    {flickServo2 === 'up' ? (
+                    {telemetry.flickServos.servo2 === 'up' ? (
                       <ChevronUp className="h-6 w-6 text-green-500" />
                     ) : (
                       <ChevronDown className="h-6 w-6 text-red-500" />
@@ -181,21 +243,15 @@ export default function TelemetryView() {
                 <div className="flex gap-1">
                   <Button
                     size="sm"
-                    variant={flickServo2 === 'up' ? 'default' : 'outline'}
-                    onClick={() => {
-                      setFlickServo2('up');
-                      handleSendFlickServo(2, 'up');
-                    }}
+                    variant={telemetry.flickServos.servo2 === 'up' ? 'default' : 'outline'}
+                    onClick={() => handleSendFlickServo(2, 'up')}
                   >
                     Up
                   </Button>
                   <Button
                     size="sm"
-                    variant={flickServo2 === 'down' ? 'default' : 'outline'}
-                    onClick={() => {
-                      setFlickServo2('down');
-                      handleSendFlickServo(2, 'down');
-                    }}
+                    variant={telemetry.flickServos.servo2 === 'down' ? 'default' : 'outline'}
+                    onClick={() => handleSendFlickServo(2, 'down')}
                   >
                     Down
                   </Button>
@@ -206,14 +262,14 @@ export default function TelemetryView() {
               <div className="flex flex-col items-center gap-3">
                 <Label className="text-sm font-medium text-muted-foreground">Servo 3</Label>
                 <div className={`relative w-20 h-32 rounded-lg border-2 transition-all ${
-                  flickServo3 === 'up'
+                  telemetry.flickServos.servo3 === 'up'
                     ? 'border-green-500 bg-green-500/10'
                     : 'border-red-500 bg-red-500/10'
                 }`}>
                   <div className={`absolute left-1/2 -translate-x-1/2 transition-all duration-300 ${
-                    flickServo3 === 'up' ? 'top-2' : 'bottom-2'
+                    telemetry.flickServos.servo3 === 'up' ? 'top-2' : 'bottom-2'
                   }`}>
-                    {flickServo3 === 'up' ? (
+                    {telemetry.flickServos.servo3 === 'up' ? (
                       <ChevronUp className="h-6 w-6 text-green-500" />
                     ) : (
                       <ChevronDown className="h-6 w-6 text-red-500" />
@@ -223,21 +279,15 @@ export default function TelemetryView() {
                 <div className="flex gap-1">
                   <Button
                     size="sm"
-                    variant={flickServo3 === 'up' ? 'default' : 'outline'}
-                    onClick={() => {
-                      setFlickServo3('up');
-                      handleSendFlickServo(3, 'up');
-                    }}
+                    variant={telemetry.flickServos.servo3 === 'up' ? 'default' : 'outline'}
+                    onClick={() => handleSendFlickServo(3, 'up')}
                   >
                     Up
                   </Button>
                   <Button
                     size="sm"
-                    variant={flickServo3 === 'down' ? 'default' : 'outline'}
-                    onClick={() => {
-                      setFlickServo3('down');
-                      handleSendFlickServo(3, 'down');
-                    }}
+                    variant={telemetry.flickServos.servo3 === 'down' ? 'default' : 'outline'}
+                    onClick={() => handleSendFlickServo(3, 'down')}
                   >
                     Down
                   </Button>
@@ -267,8 +317,8 @@ export default function TelemetryView() {
                   type="number"
                   min="0"
                   max="600"
-                  value={depositRpm}
-                  onChange={(e) => setDepositRpm(Number(e.target.value))}
+                  value={telemetry.depositRpm}
+                  onChange={(e) => updateDepositRpm(Number(e.target.value))}
                   className="text-lg font-bold"
                 />
                 <Button onClick={handleSendDepositRpm} size="icon">
@@ -279,8 +329,8 @@ export default function TelemetryView() {
 
             <div className="space-y-2">
               <Slider
-                value={[depositRpm]}
-                onValueChange={(value) => setDepositRpm(value[0])}
+                value={[telemetry.depositRpm]}
+                onValueChange={(value) => updateDepositRpm(value[0])}
                 max={600}
                 step={10}
                 className="w-full"
@@ -295,9 +345,9 @@ export default function TelemetryView() {
             <div className="flex items-center justify-center gap-2 p-4 bg-muted/30 rounded-lg">
               <RotateCw
                 className="h-8 w-8 text-primary animate-spin"
-                style={{ animationDuration: depositRpm > 0 ? `${1000 / (depositRpm / 60)}ms` : '0s' }}
+                style={{ animationDuration: telemetry.depositRpm > 0 ? `${1000 / (telemetry.depositRpm / 60)}ms` : '0s' }}
               />
-              <span className="text-3xl font-bold tabular-nums">{depositRpm}</span>
+              <span className="text-3xl font-bold tabular-nums">{telemetry.depositRpm}</span>
               <span className="text-muted-foreground">RPM</span>
             </div>
           </CardContent>
@@ -316,7 +366,7 @@ export default function TelemetryView() {
             <div className="space-y-2">
               <div className="flex justify-between items-baseline">
                 <Label htmlFor="pid-p">P (Proportional)</Label>
-                <span className="text-xl font-bold tabular-nums text-blue-500">{pidP.toFixed(4)}</span>
+                <span className="text-xl font-bold tabular-nums text-blue-500">{telemetry.depositPidf.p.toFixed(4)}</span>
               </div>
               <Input
                 id="pid-p"
@@ -324,12 +374,12 @@ export default function TelemetryView() {
                 step="0.001"
                 min="0"
                 max="1"
-                value={pidP}
-                onChange={(e) => setPidP(Number(e.target.value))}
+                value={telemetry.depositPidf.p}
+                onChange={(e) => updatePidf('p', Number(e.target.value))}
               />
               <Slider
-                value={[pidP * 1000]}
-                onValueChange={(value) => setPidP(value[0] / 1000)}
+                value={[telemetry.depositPidf.p * 1000]}
+                onValueChange={(value) => updatePidf('p', value[0] / 1000)}
                 max={100}
                 step={1}
               />
@@ -339,7 +389,7 @@ export default function TelemetryView() {
             <div className="space-y-2">
               <div className="flex justify-between items-baseline">
                 <Label htmlFor="pid-i">I (Integral)</Label>
-                <span className="text-xl font-bold tabular-nums text-green-500">{pidI.toFixed(4)}</span>
+                <span className="text-xl font-bold tabular-nums text-green-500">{telemetry.depositPidf.i.toFixed(4)}</span>
               </div>
               <Input
                 id="pid-i"
@@ -347,12 +397,12 @@ export default function TelemetryView() {
                 step="0.0001"
                 min="0"
                 max="0.1"
-                value={pidI}
-                onChange={(e) => setPidI(Number(e.target.value))}
+                value={telemetry.depositPidf.i}
+                onChange={(e) => updatePidf('i', Number(e.target.value))}
               />
               <Slider
-                value={[pidI * 10000]}
-                onValueChange={(value) => setPidI(value[0] / 10000)}
+                value={[telemetry.depositPidf.i * 10000]}
+                onValueChange={(value) => updatePidf('i', value[0] / 10000)}
                 max={20}
                 step={0.1}
               />
@@ -362,7 +412,7 @@ export default function TelemetryView() {
             <div className="space-y-2">
               <div className="flex justify-between items-baseline">
                 <Label htmlFor="pid-d">D (Derivative)</Label>
-                <span className="text-xl font-bold tabular-nums text-purple-500">{pidD.toFixed(4)}</span>
+                <span className="text-xl font-bold tabular-nums text-purple-500">{telemetry.depositPidf.d.toFixed(4)}</span>
               </div>
               <Input
                 id="pid-d"
@@ -370,12 +420,12 @@ export default function TelemetryView() {
                 step="0.0001"
                 min="0"
                 max="0.1"
-                value={pidD}
-                onChange={(e) => setPidD(Number(e.target.value))}
+                value={telemetry.depositPidf.d}
+                onChange={(e) => updatePidf('d', Number(e.target.value))}
               />
               <Slider
-                value={[pidD * 10000]}
-                onValueChange={(value) => setPidD(value[0] / 10000)}
+                value={[telemetry.depositPidf.d * 10000]}
+                onValueChange={(value) => updatePidf('d', value[0] / 10000)}
                 max={40}
                 step={0.1}
               />
@@ -385,7 +435,7 @@ export default function TelemetryView() {
             <div className="space-y-2">
               <div className="flex justify-between items-baseline">
                 <Label htmlFor="pid-f">F (Feedforward)</Label>
-                <span className="text-xl font-bold tabular-nums text-orange-500">{pidF.toFixed(4)}</span>
+                <span className="text-xl font-bold tabular-nums text-orange-500">{telemetry.depositPidf.f.toFixed(4)}</span>
               </div>
               <Input
                 id="pid-f"
@@ -393,12 +443,12 @@ export default function TelemetryView() {
                 step="0.001"
                 min="0"
                 max="1"
-                value={pidF}
-                onChange={(e) => setPidF(Number(e.target.value))}
+                value={telemetry.depositPidf.f}
+                onChange={(e) => updatePidf('f', Number(e.target.value))}
               />
               <Slider
-                value={[pidF * 1000]}
-                onValueChange={(value) => setPidF(value[0] / 1000)}
+                value={[telemetry.depositPidf.f * 1000]}
+                onValueChange={(value) => updatePidf('f', value[0] / 1000)}
                 max={150}
                 step={1}
               />

@@ -14,7 +14,6 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
  */
 @Autonomous
 public class GamepadTestOpMode extends LinearOpMode {
-
     private static void logGamepad(Telemetry telemetry, Gamepad gamepad, String prefix) {
         telemetry.addData(prefix + "Synthetic",
             gamepad.getGamepadId() == Gamepad.ID_UNASSOCIATED);

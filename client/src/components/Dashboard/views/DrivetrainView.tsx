@@ -1,59 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store/reducers';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Compass, Gauge, Navigation } from "lucide-react";
 
-interface Position {
-  x: number;
-  y: number;
-  heading: number;
-}
-
-interface RobotData {
-  position: Position;
-  velocity: number;
-  acceleration: number;
-  centerOfGravity: { x: number; y: number };
-}
-
 export default function DrivetrainView() {
+  // Get data from Redux instead of local state
+  const drivetrainData = useSelector((state: RootState) => state.drivetrain);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [robotData, setRobotData] = useState<RobotData>({
-    position: { x: 0, y: 0, heading: 0 },
-    velocity: 0,
-    acceleration: 0,
-    centerOfGravity: { x: 0, y: 0 }
-  });
-  const [pathHistory, setPathHistory] = useState<Position[]>([]);
-
-  // Simulate robot data updates (replace with actual data from Redux/WebSocket)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRobotData(prev => ({
-        position: {
-          x: Math.sin(Date.now() / 1000) * 100,
-          y: Math.cos(Date.now() / 1000) * 100,
-          heading: (Date.now() / 50) % 360
-        },
-        velocity: Math.abs(Math.sin(Date.now() / 500)) * 100,
-        acceleration: Math.sin(Date.now() / 300) * 50 + 50,
-        centerOfGravity: {
-          x: Math.sin(Date.now() / 1500) * 10,
-          y: Math.cos(Date.now() / 1500) * 10
-        }
-      }));
-    }, 50);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Update path history
-  useEffect(() => {
-    setPathHistory(prev => {
-      const newHistory = [...prev, robotData.position];
-      // Keep last 200 points
-      return newHistory.slice(-200);
-    });
-  }, [robotData.position]);
 
   // Draw field and robot path
   useEffect(() => {
@@ -106,19 +60,19 @@ export default function DrivetrainView() {
     ctx.stroke();
 
     // Draw path history
-    if (pathHistory.length > 1) {
+    if (drivetrainData.pathHistory.length > 1) {
       ctx.strokeStyle = '#3b82f6';
       ctx.lineWidth = 2;
       ctx.beginPath();
 
-      const firstPoint = pathHistory[0];
+      const firstPoint = drivetrainData.pathHistory[0];
       ctx.moveTo(
         centerX + firstPoint.x * scale,
         centerY - firstPoint.y * scale
       );
 
-      for (let i = 1; i < pathHistory.length; i++) {
-        const point = pathHistory[i];
+      for (let i = 1; i < drivetrainData.pathHistory.length; i++) {
+        const point = drivetrainData.pathHistory[i];
         ctx.lineTo(
           centerX + point.x * scale,
           centerY - point.y * scale
@@ -128,8 +82,8 @@ export default function DrivetrainView() {
     }
 
     // Draw robot position
-    const robotX = centerX + robotData.position.x * scale;
-    const robotY = centerY - robotData.position.y * scale;
+    const robotX = centerX + drivetrainData.position.x * scale;
+    const robotY = centerY - drivetrainData.position.y * scale;
 
     // Robot body
     ctx.fillStyle = '#ef4444';
@@ -138,7 +92,7 @@ export default function DrivetrainView() {
     ctx.fill();
 
     // Robot heading indicator
-    const headingRad = (robotData.position.heading * Math.PI) / 180;
+    const headingRad = (drivetrainData.position.heading * Math.PI) / 180;
     ctx.strokeStyle = '#fbbf24';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -166,7 +120,7 @@ export default function DrivetrainView() {
       const canvasY = centerY - y * scale;
       ctx.fillText(y.toString(), 30, canvasY + 4);
     }
-  }, [robotData, pathHistory]);
+  }, [drivetrainData.position, drivetrainData.pathHistory]);
 
   return (
     <div className="h-full grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
@@ -191,15 +145,15 @@ export default function DrivetrainView() {
           <div className="grid grid-cols-3 gap-4 mt-4">
             <div className="bg-muted/30 rounded-lg p-3">
               <div className="text-xs text-muted-foreground mb-1">X Position</div>
-              <div className="text-2xl font-bold">{robotData.position.x.toFixed(1)}"</div>
+              <div className="text-2xl font-bold">{drivetrainData.position.x.toFixed(1)}"</div>
             </div>
             <div className="bg-muted/30 rounded-lg p-3">
               <div className="text-xs text-muted-foreground mb-1">Y Position</div>
-              <div className="text-2xl font-bold">{robotData.position.y.toFixed(1)}"</div>
+              <div className="text-2xl font-bold">{drivetrainData.position.y.toFixed(1)}"</div>
             </div>
             <div className="bg-muted/30 rounded-lg p-3">
               <div className="text-xs text-muted-foreground mb-1">Heading</div>
-              <div className="text-2xl font-bold">{robotData.position.heading.toFixed(1)}°</div>
+              <div className="text-2xl font-bold">{drivetrainData.position.heading.toFixed(1)}°</div>
             </div>
           </div>
         </CardContent>
@@ -219,12 +173,12 @@ export default function DrivetrainView() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">in/s</span>
-                <span className="font-bold">{robotData.velocity.toFixed(1)}</span>
+                <span className="font-bold">{drivetrainData.velocity.toFixed(1)}</span>
               </div>
               <div className="relative h-8 bg-muted rounded-full overflow-hidden">
                 <div
                   className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-500 to-green-400 transition-all duration-300"
-                  style={{ width: `${robotData.velocity}%` }}
+                  style={{ width: `${drivetrainData.velocity}%` }}
                 />
               </div>
             </div>
@@ -243,12 +197,12 @@ export default function DrivetrainView() {
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">in/s²</span>
-                <span className="font-bold">{robotData.acceleration.toFixed(1)}</span>
+                <span className="font-bold">{drivetrainData.acceleration.toFixed(1)}</span>
               </div>
               <div className="relative h-8 bg-muted rounded-full overflow-hidden">
                 <div
                   className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-300"
-                  style={{ width: `${robotData.acceleration}%` }}
+                  style={{ width: `${drivetrainData.acceleration}%` }}
                 />
               </div>
             </div>
@@ -273,8 +227,8 @@ export default function DrivetrainView() {
 
                 {/* CoG indicator */}
                 <circle
-                  cx={`${50 + (robotData.centerOfGravity.x / 20) * 50}%`}
-                  cy={`${50 - (robotData.centerOfGravity.y / 20) * 50}%`}
+                  cx={`${50 + (drivetrainData.centerOfGravity.x / 20) * 50}%`}
+                  cy={`${50 - (drivetrainData.centerOfGravity.y / 20) * 50}%`}
                   r="8"
                   fill="#ef4444"
                   className="transition-all duration-300"
@@ -283,10 +237,10 @@ export default function DrivetrainView() {
 
               {/* Labels */}
               <div className="absolute bottom-2 left-2 text-xs text-muted-foreground">
-                X: {robotData.centerOfGravity.x.toFixed(1)}"
+                X: {drivetrainData.centerOfGravity.x.toFixed(1)}"
               </div>
               <div className="absolute bottom-2 right-2 text-xs text-muted-foreground">
-                Y: {robotData.centerOfGravity.y.toFixed(1)}"
+                Y: {drivetrainData.centerOfGravity.y.toFixed(1)}"
               </div>
             </div>
           </CardContent>

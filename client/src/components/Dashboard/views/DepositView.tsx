@@ -1,65 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store/reducers';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RotateCw, Target, Navigation, TrendingUp } from "lucide-react";
 
-interface DepositData {
-  motorRpm: number;
-  pidfValues: {
-    p: number;
-    i: number;
-    d: number;
-    f: number;
-  };
-  robotPosition: {
-    x: number;
-    y: number;
-    heading: number; // rotation in degrees
-  };
-  distanceToGoal: number;
-  allianceColor: 'red' | 'blue';
-}
-
 export default function DepositView() {
-  const [depositData, setDepositData] = useState<DepositData>({
-    motorRpm: 0,
-    pidfValues: {
-      p: 0.05,
-      i: 0.001,
-      d: 0.002,
-      f: 0.1
-    },
-    robotPosition: {
-      x: 0,
-      y: 0,
-      heading: 0
-    },
-    distanceToGoal: 0,
-    allianceColor: 'blue'
-  });
-
-  // Simulate deposit data updates (replace with actual data from Redux/WebSocket)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setDepositData({
-        motorRpm: Math.abs(Math.sin(Date.now() / 1000)) * 600,
-        pidfValues: {
-          p: 0.05 + Math.sin(Date.now() / 5000) * 0.01,
-          i: 0.001 + Math.cos(Date.now() / 5000) * 0.0005,
-          d: 0.002 + Math.sin(Date.now() / 4000) * 0.001,
-          f: 0.1 + Math.cos(Date.now() / 6000) * 0.02
-        },
-        robotPosition: {
-          x: Math.sin(Date.now() / 1000) * 100,
-          y: Math.cos(Date.now() / 1000) * 100,
-          heading: (Date.now() / 50) % 360
-        },
-        distanceToGoal: Math.abs(Math.sin(Date.now() / 1500)) * 150,
-        allianceColor: Math.floor(Date.now() / 5000) % 2 === 0 ? 'blue' : 'red'
-      });
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, []);
+  // Get data from Redux instead of local state
+  const depositData = useSelector((state: RootState) => state.deposit);
 
   const getAllianceColors = () => {
     if (depositData.allianceColor === 'blue') {

@@ -1,39 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store/reducers';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Camera, VideoOff, Eye, Activity } from "lucide-react";
 
-interface CameraData {
-  resolution: string;
-  fps: number;
-  objectsDetected: number;
-  processingMs: number;
-  mode: 'apriltag' | 'color-detection' | 'none';
-}
-
 export default function CameraView() {
-  const [cameraData, setCameraData] = useState<CameraData>({
-    resolution: '1920x1080',
-    fps: 30,
-    objectsDetected: 0,
-    processingMs: 0,
-    mode: 'apriltag'
-  });
-
-  // Simulate camera data updates (replace with actual data from Redux/WebSocket)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const modes: ('apriltag' | 'color-detection' | 'none')[] = ['apriltag', 'color-detection', 'none'];
-      setCameraData({
-        resolution: '1920x1080',
-        fps: Math.floor(25 + Math.random() * 10),
-        objectsDetected: Math.floor(Math.random() * 5),
-        processingMs: Math.floor(10 + Math.random() * 40),
-        mode: modes[Math.floor(Date.now() / 3000) % 3]
-      });
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, []);
+  // Get data from Redux instead of local state
+  const cameraData = useSelector((state: RootState) => state.camera);
 
   const getModeColor = () => {
     switch (cameraData.mode) {
@@ -75,18 +47,28 @@ export default function CameraView() {
         <CardContent className="flex-1 flex flex-col">
           {/* Video Display Area */}
           <div className="flex-1 bg-black rounded-lg flex items-center justify-center relative min-h-[400px]">
-            {/* No Video Available Placeholder */}
-            <div className="flex flex-col items-center gap-4 text-muted-foreground">
-              <VideoOff className="h-16 w-16" />
-              <div className="text-xl font-semibold">No Video Available</div>
-              <div className="text-sm">Camera feed will appear here</div>
-            </div>
+            {/* Camera Image or Placeholder */}
+            {cameraData.imageStr ? (
+              <img
+                src={`data:image/jpeg;base64,${cameraData.imageStr}`}
+                alt="Camera Feed"
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <div className="flex flex-col items-center gap-4 text-muted-foreground">
+                <VideoOff className="h-16 w-16" />
+                <div className="text-xl font-semibold">No Video Available</div>
+                <div className="text-sm">Camera feed will appear here</div>
+              </div>
+            )}
 
             {/* Live Indicator */}
-            <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-500 px-3 py-1 rounded-full">
-              <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-              <span className="text-white text-sm font-bold">LIVE</span>
-            </div>
+            {cameraData.imageStr && (
+              <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-500 px-3 py-1 rounded-full">
+                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                <span className="text-white text-sm font-bold">LIVE</span>
+              </div>
+            )}
 
             {/* Resolution Overlay */}
             <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm px-3 py-1 rounded text-white text-sm font-mono">

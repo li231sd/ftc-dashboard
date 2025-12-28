@@ -1,56 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store/reducers';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RotateCw, ChevronUp, ChevronDown } from "lucide-react";
 
-interface IntakeData {
-  rpm: number;
-  flickServos: {
-    servo1: 'up' | 'down';
-    servo2: 'up' | 'down';
-    servo3: 'up' | 'down';
-  };
-  ballHolders: {
-    pos1: 'green' | 'purple' | 'empty';
-    pos2: 'green' | 'purple' | 'empty';
-    pos3: 'green' | 'purple' | 'empty';
-  };
-}
-
 export default function IntakeView() {
-  const [intakeData, setIntakeData] = useState<IntakeData>({
-    rpm: 0,
-    flickServos: {
-      servo1: 'down',
-      servo2: 'down',
-      servo3: 'down',
-    },
-    ballHolders: {
-      pos1: 'empty',
-      pos2: 'empty',
-      pos3: 'empty',
-    }
-  });
-
-  // Simulate intake data updates (replace with actual data from Redux/WebSocket)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIntakeData({
-        rpm: Math.abs(Math.sin(Date.now() / 1000)) * 500,
-        flickServos: {
-          servo1: Math.random() > 0.5 ? 'up' : 'down',
-          servo2: Math.random() > 0.5 ? 'up' : 'down',
-          servo3: Math.random() > 0.5 ? 'up' : 'down',
-        },
-        ballHolders: {
-          pos1: ['green', 'purple', 'empty'][Math.floor(Math.random() * 3)] as any,
-          pos2: ['green', 'purple', 'empty'][Math.floor(Math.random() * 3)] as any,
-          pos3: ['green', 'purple', 'empty'][Math.floor(Math.random() * 3)] as any,
-        }
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
+  // Get data from Redux instead of local state
+  const intakeData = useSelector((state: RootState) => state.intake);
 
   const getBallColor = (color: 'green' | 'purple' | 'empty') => {
     if (color === 'green') return 'bg-green-500';

@@ -1,12 +1,16 @@
 import { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import { Action, combineReducers } from 'redux';
 
+import drivetrainReducer from './drivetrain';
+import intakeReducer from './intake';
+
 import replayReducer from './replay';
 import telemetryReducer from './telemetry';
 import socketReducer from './socket';
 import configReducer from './config';
 import statusReducer from './status';
 import cameraReducer from './camera';
+import depositReducer from './deposit';
 import settingsReducer from './settings';
 import gamepadReducer from './gamepad';
 import hardwareConfigReducer from './hardwareconfig';
@@ -20,10 +24,13 @@ const rootReducer = combineReducers({
   config: configReducer,
   status: statusReducer,
   camera: cameraReducer,
+  deposit: depositReducer,
   settings: settingsReducer,
   gamepad: gamepadReducer,
   hardwareConfig: hardwareConfigReducer,
   logcat: logcatReducer,
+  drivetrain: drivetrainReducer,
+  intake: intakeReducer
 });
 
 export type RootState = ReturnType<typeof rootReducer>;
